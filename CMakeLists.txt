@@ -1,12 +1,15 @@
-cmake_minimum_required(VERSION 3.1.3)
+﻿cmake_minimum_required(VERSION 3.1.3)
 
-project(GSL CXX)
+project(GSL LANGUAGES CXX)
 
 include(ExternalProject)
 find_package(Git)
 
+# Find includes in corresponding build directories
+
 # creates a library GSL which is an interface (header files only)
-add_library(GSL INTERFACE)
+add_library(${PROJECT_NAME} INTERFACE)
+add_library(${PROJECT_NAME}::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
 
 # determine whether this is a standalone project or included by other projects
 set(GSL_STANDALONE_PROJECT OFF)
@@ -32,7 +35,7 @@ if (CMAKE_VERSION VERSION_LESS 3.7.9)
     if(COMPILER_SUPPORTS_CXX_STANDARD)
         target_compile_options(GSL INTERFACE "${GSL_CXX_STD_OPT}")
     else()
-        message(FATAL_ERROR "The compiler ${CMAKE_CXX_COMPILER} has no c++${GSL_CXX_STANDARD} support. Please use a different C++ compiler.")
+        _message(FATAL_ERROR "The compiler ${CMAKE_CXX_COMPILER} has no c++${GSL_CXX_STANDARD} support. Please use a different C++ compiler.")
     endif()
 else ()
     target_compile_features(GSL INTERFACE "${GSL_CXX_STD}")
@@ -54,18 +57,13 @@ target_compile_definitions(GSL INTERFACE
 # the SYSTEM keyword suppresses warnings for users of the library
 if(GSL_STANDALONE_PROJECT)
     target_include_directories(GSL INTERFACE
-        $<BUILD_INTERFACE:
-            ${CMAKE_CURRENT_SOURCE_DIR}/include
-        >
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     )
 else()
     target_include_directories(GSL SYSTEM INTERFACE
-        $<BUILD_INTERFACE:
-            ${CMAKE_CURRENT_SOURCE_DIR}/include
-        >
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     )
 endif()
-
 
 if (CMAKE_VERSION VERSION_GREATER 3.7.8)
     if (MSVC_IDE)
@@ -82,6 +80,12 @@ if (CMAKE_VERSION VERSION_GREATER 3.7.8)
     endif()
 endif()
 
+# ┌──────────────────────────────────────────────────────────────────┐
+# │  Installation                                                    │
+# └──────────────────────────────────────────────────────────────────┘
+
+vc_install_dll ()
+
 install(
     DIRECTORY include/gsl
     DESTINATION include
@@ -89,6 +93,6 @@ install(
 
 option(GSL_TEST "Generate tests." ${GSL_STANDALONE_PROJECT})
 if (GSL_TEST)
-	enable_testing()
-	add_subdirectory(tests)
+        enable_testing()
+        add_subdirectory(tests)
 endif ()
